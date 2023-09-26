@@ -1,8 +1,11 @@
 package com.example.security_jwt_pr.config;
 
+import com.example.security_jwt_pr.filter.TokenAuthenticationFilter;
+import com.example.security_jwt_pr.jwt.TokenProvider;
 import com.example.security_jwt_pr.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.filters.CorsFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,14 +17,19 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class WebSecurityConfig {
+
+    private final TokenProvider tokenProvider;
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+
         return httpSecurity
                 .formLogin().disable()
                 .csrf().disable()
@@ -30,7 +38,9 @@ public class WebSecurityConfig {
                 .and()
                 .authorizeRequests().antMatchers("/user/**", "/").permitAll()
                 .anyRequest().authenticated()
-                .and().build();
+                .and()
+                .addFilterBefore(new TokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 
     @Bean

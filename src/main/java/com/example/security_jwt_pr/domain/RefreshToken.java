@@ -1,6 +1,7 @@
 package com.example.security_jwt_pr.domain;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,6 +23,7 @@ public class RefreshToken {
     @Column(name = "refresh_token", nullable = false)
     private String refreshToken;
 
+    @Builder
     public RefreshToken(Long userId, String refreshToken) {
         this.userId = userId;
         this.refreshToken = refreshToken;

@@ -1,14 +1,18 @@
 package com.example.security_jwt_pr.jwt;
 
 import com.example.security_jwt_pr.domain.User;
+import com.example.security_jwt_pr.repository.UserRepository;
+import com.example.security_jwt_pr.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -19,9 +23,16 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class TokenProvider {
 
     private final JwtProperties jwtProperties;
+    private final UserRepository userRepository;
+
+    public String generateToken(User user, Duration expiredAt){
+        Date now = new Date();
+        return makeToken(new Date(now.getTime() + expiredAt.toMillis()), user);
+    }
 
     public String makeToken(Date expiry, User user){
         Date now = new Date();
@@ -52,13 +63,11 @@ public class TokenProvider {
 
     // 토큰 기반으로 인증 정보를 가져오는 메서드
     public Authentication getAuthentication(String token){
-        Claims claims = getClaims(token);
-        Set<SimpleGrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"));
-
+        UserDetails userDetails = userRepository.findById(getUserId(token)).orElseThrow(() -> new IllegalArgumentException("알맞은 유저가 없음"));
+        log.info("-------------------------------username = {}, password = {} --------------------------",userDetails.getUsername(), userDetails.getPassword());
         return new UsernamePasswordAuthenticationToken(
-                new org.springframework.security.core.userdetails.User(claims.getSubject(), "", authorities),
-                token,
-                authorities
+                userDetails.getUsername(), token, userDetails.getAuthorities()
+                // 인증 객체에 직접 값을 넣어야 함
         );
     }
 

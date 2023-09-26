@@ -1,9 +1,11 @@
 package com.example.security_jwt_pr.controller;
 
+import com.example.security_jwt_pr.domain.User;
 import com.example.security_jwt_pr.dto.AddUserRequest;
+import com.example.security_jwt_pr.dto.LoginSuccessDto;
 import com.example.security_jwt_pr.dto.LoginUserDto;
+import com.example.security_jwt_pr.service.TokenService;
 import com.example.security_jwt_pr.service.UserService;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ import javax.validation.Valid;
 public class UserController {
 
     private final UserService userService;
+    private final TokenService tokenService;
 
     @PostMapping("/signup")
     public ResponseEntity<?> userSave(@Valid @RequestBody AddUserRequest addUserRequest){
@@ -31,8 +34,18 @@ public class UserController {
 
     @PostMapping("/signin")
     public ResponseEntity<?> login(@Valid @RequestBody LoginUserDto userDto){
-         String existUserId = userService.existUser(userDto);
-         return ResponseEntity.ok().body("존재하는 userId : " + existUserId);
+
+        User user = userService.loadUserByUsername(userDto.getEmail());
+        String accessToken = tokenService.generateAccessToken(user);
+        String refreshToken = tokenService.generateRefreshToken(user);
+
+         return ResponseEntity.ok().body(LoginSuccessDto.builder()
+                         .email(user.getEmail())
+                         .accessToken(accessToken)
+                         .refreshToken(refreshToken)
+
+                 .build()
+         );
     }
 
 
